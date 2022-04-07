@@ -55,4 +55,59 @@ function start() {
             }
         })
 }
+
+//add department
+
+function addDept() {
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                name: "deptName",
+                message: "Enter department name"
+            }
+        ]).then(function (answer) {
+            connection.query(
+                "INSERT INTO department SET ?",
+                {
+                    dept_name: answer.deptName,
+                },
+                function (err) {
+                    if (err) throw err;
+                    console.log("The department was added successfully!")
+                    innit()
+                }
+            )
+        })
 }
+
+//view all departments
+
+function viewAllDept() {
+    const query = `
+        SELECT dept_name as department FROM department`
+            connection.query(query, function (err, res) {
+                if (err) throw err;
+        console.table(res)
+        start()
+    })
+}
+//add role
+
+//delete role
+
+//view all roles
+
+//add employee
+
+//delete employee
+
+//view all employees
+
+//view employee by department
+
+//view employee by manager
+
+//update employee role
+
+//update employee manager
