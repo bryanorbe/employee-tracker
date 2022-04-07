@@ -406,5 +406,118 @@ function viewAllEmpByManager() {
 }
 
 //update employee role
+function updateEmpRole() {
+    let empName;
+    let empToUpdate;
+    let empRoleUpdate;
+    connection.query("SELECT * FROM employee", function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "empName",
+                    message: "Which employee would you like to update?",
+                    choices: function () {
+                        let empArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            empArray.push(res[i].first_name + " " + res[i].last_name);
+                        }
+                        return empArray;
+                    }
+                }
+            ]).then((answer) => {
+                var chosenEmp = res.find(item => (item.first_name + " " + item.last_name) === answer.empName);
+                empToUpdate = chosenEmp.id;
+                empName = answer.empName;
+                connection.query("SELECT * FROM roles", function (err, res) {
+                    if (err) throw err;
+                    inquirer
+                        .prompt([
+                            {
+                                type: "list",
+                                name: "newRole",
+                                message: "Enter New Role",
+                                choices: function () {
+                                    let roleArray = [];
+                                    for (let i = 0; i < res.length; i++) {
+                                        roleArray.push(res[i].title);
+                                    }
+                                    return roleArray;
+                                }
+                            }
+
+                        ]).then((answer) => {
+                            var chosenRole = res.find(item => item.title === answer.newRole)
+                            empRoleUpdate = chosenRole.id
+                            connection.query(
+                                "UPDATE employee SET ? WHERE ?",
+                                [
+                                    { role_id: parseInt(empRoleUpdate) },
+                                    { id: parseInt(empToUpdate) }
+                                ],
+                                function (err) {
+                                    if (err) throw err;
+                                    console.log(`${empName}'s role has been updated!`)
+                                    start()
+                                }
+                            )
+                        })
+                })
+            })
+    })
+}
 
 //update employee manager
+function updateEmpManager() {
+    connection.query("SELECT * FROM employee", function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "empName",
+                    message: "Select Employee To Update",
+                    choices: function () {
+                        let empArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            empArray.push(res[i].first_name + " " + res[i].last_name);
+                        }
+                        return empArray;
+                    }
+                }
+            ]).then((answer) => {
+                var chosenEmp = res.find(item => (item.first_name + " " + item.last_name) === answer.empName);
+                connection.query("SELECT e.id, e.first_name, e.last_name FROM employee e LEFT JOIN roles r ON e.role_id = r.id WHERE title = 'Manager' OR 'manager'", function (err, res) {
+                    if (err) throw err;
+                    inquirer
+                        .prompt([
+                            {
+                                type: "list",
+                                name: "managerName",
+                                message: "Enter New Manager",
+                                choices: function () {
+                                    let managerArray = [];
+                                    for (let i = 0; i < res.length; i++) {
+                                        managerArray.push(res[i].first_name + " " + res[i].last_name);
+                                    }
+                                    return managerArray
+                                }
+                            }
+                        ]).then((answer) => {
+                            var chosenManager = res.find(item => (item.first_name + " " + item.last_name) === answer.managerName);
+                            connection.query("UPDATE employee SET ? WHERE ?",
+                                [
+                                    { manager_id: chosenManager.id },
+                                    { id: chosenEmp.id }
+                                ],
+                                function (err) {
+                                    if (err) throw err;
+                                    console.log(`${chosenEmp.first_name} ${chosenEmp.last_name}'s manager has been updated!`)
+                                    start()
+                                })
+                        })
+                })
+            })
+    })
+}
