@@ -93,10 +93,98 @@ function viewAllDept() {
     })
 }
 //add role
+function addRole() {
+    connection.query("SELECT * FROM department", function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: "input",
+                    name: "roleTitle",
+                    message: "Enter Role Title"
+                },
+                {
+                    type: "input",
+                    name: "roleSalary",
+                    message: "Enter Role Salary"
+                },
+                {
+                    type: "list",
+                    name: "roleDeptName",
+                    message: "Enter Role Department",
+                    choices: function () {
+                        let deptArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            deptArray.push(res[i].dept_name);
+                        }
+                        return deptArray;
+                    }
+                }
+            ]).then(function (answer) {
+                var chosenDept = res.find(item => item.dept_name === answer.roleDeptName)
+                connection.query(
+                    "INSERT INTO roles SET ?",
+                    {
+                        title: answer.roleTitle,
+                        salary: parseInt(answer.roleSalary),
+                        dept_id: parseInt(chosenDept.id)
+                    },
+                    function (err) {
+                        if (err) throw err;
+                        console.log(`The ${answer.roleTitle} role was added successfully!`)
+                        start()
+                    }
+                )
+            })
+    })
+}
 
 //delete role
-
+function removeRole() {
+    connection.query("SELECT * FROM roles", function (err, res) {
+        if (err) throw err;
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "removeRole",
+                message: "Select Role To Remove",
+                choices: function () {
+                    let roleArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                        roleArray.push(res[i].title);
+                    }
+                    return roleArray;
+                }
+            }
+        ]).then((answer) => {
+            var chosenRole = res.find(item => item.title === answer.removeRole)
+            connection.query("DELETE FROM roles WHERE ?",
+                {
+                    id: chosenRole.id
+                },
+                function (err, res) {
+                    if (err) throw err;
+                    console.log(`${answer.removeRole} role removed!`)
+                    start()
+                }
+            )
+        })
+})
+}
 //view all roles
+function viewAllRoles() {
+    const query = `
+    SELECT r.title, r.salary, d.dept_name AS department 
+    FROM roles r 
+    LEFT JOIN department d 
+    ON r.dept_id = d.id`
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+        console.table(res);
+        start()
+    })
+}
+
 
 //add employee
 
