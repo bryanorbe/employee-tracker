@@ -26,29 +26,29 @@ function start() {
                     "View all employees", "View all employees by department", "View all employees by manager", "Update employee role", "Update employee manager", "EXIT"]
             }
         ]).then((response) => {
-            if (response.whatToDo === "Add a department") {
+            if (response.start === "Add a department") {
                 addDept()
-            } else if (response.whatToDo === "View all departments") {
+            } else if (response.start === "View all departments") {
                 viewAllDept()
-            } else if (response.whatToDo === "Add a role") {
+            } else if (response.start === "Add a role") {
                 addRole()
-            } else if (response.whatToDo === "View all roles") {
+            } else if (response.start === "View all roles") {
                 viewAllRoles()
-            } else if (response.whatToDo === "Add an employee") {
+            } else if (response.start === "Add an employee") {
                 addEmp()
-            } else if (response.whatToDo === "Remove an employee") {
+            } else if (response.start === "Remove an employee") {
                 removeEmp()
-            } else if (response.whatToDo === "View all employees") {
+            } else if (response.start === "View all employees") {
                 viewAllEmp()
-            } else if (response.whatToDo === "Update employee role") {
+            } else if (response.start === "Update employee role") {
                 updateEmpRole()
-            } else if (response.whatToDo === "Update employee manager") {
+            } else if (response.start === "Update employee manager") {
                 updateEmpManager()
-            } else if (response.whatToDo === "View all employees by department") {
+            } else if (response.start === "View all employees by department") {
                 viewAllEmpDept()
-            } else if (response.whatToDo === "View all employees by manager") {
+            } else if (response.start === "View all employees by manager") {
                 viewAllEmpByManager()
-            } else if (response.whatToDo === "Remove a role") {
+            } else if (response.start === "Remove a role") {
                 removeRole()
             } else {
                 connection.end()
