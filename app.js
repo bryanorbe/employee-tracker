@@ -75,7 +75,7 @@ function addDept() {
                 function (err) {
                     if (err) throw err;
                     console.log("The department was added successfully!")
-                    innit()
+                    start()
                 }
             )
         })
@@ -187,14 +187,223 @@ function viewAllRoles() {
 
 
 //add employee
+function addEmp() {
+    let newEmpFirst;
+    let newEmpLast;
+    let newEmpRole;
+    let newEmpManager;
+
+    inquirer.prompt([
+            {
+                type: "input",
+                name: "empFirstName",
+                message: "Enter Employee's First Name",
+            }, {
+                type: "input",
+                name: "empLastName",
+                message: "Enter Employee's Last Name",
+            },
+        ]).then((answer) => {
+            newEmpFirst = answer.empFirstName;
+            newEmpLast = answer.empLastName;
+            connection.query("SELECT * FROM roles", function (err, res) {
+                if (err) throw err;
+                inquirer
+                    .prompt([
+                        {
+                            type: "list",
+                            name: "empRole",
+                            message: "Select Employee Role",
+                            choices: function () {
+                                let roleArray = [];
+                                for (let i = 0; i < res.length; i++) {
+                                    roleArray.push(res[i].title);
+                                }
+                                return roleArray;
+                            }
+                        }
+                    ]).then((answer) => {
+                        var chosenRole = res.find(item => item.title === answer.empRole);
+                        newEmpRole = chosenRole.id;
+                        connection.query("SELECT * FROM employee", function (err, res) {
+                            if (err) throw err;
+                            inquirer
+                                .prompt([
+                                    {
+                                        type: "list",
+                                        name: "empManager",
+                                        message: "Select Employee Manager",
+                                        choices: function () {
+                                            let managerArray = [];
+                                            for (let i = 0; i < res.length; i++) {
+                                                managerArray.push(res[i].first_name + " " + res[i].last_name);
+                                            }
+                                            return managerArray;
+                                        }
+                                    }
+                                ]).then((answer) => {
+                                    var chosenManager = res.find(item => (item.first_name + " " + item.last_name) === answer.empManager);
+                                    newEmpManager = chosenManager.id;
+                                    connection.query(
+                                        "INSERT INTO employee SET ?",
+                                        {
+                                            first_name: newEmpFirst,
+                                            last_name: newEmpLast,
+                                            role_id: parseInt(newEmpRole),
+                                            manager_id: parseInt(newEmpManager)
+                                        },
+                                        function (err) {
+                                            if (err) throw err;
+                                            console.log(`New employee, ${newEmpFirst} ${newEmpLast}, has been successfully added!`)
+                                            start()
+                                        }
+                                    )
+                                })
+                        })
+                    })
+            })
+        })
+}
+
 
 //delete employee
+function removeEmp() {
+    connection.query("SELECT * FROM employee", function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "removeEmp",
+                    message: "Select Employee To Remove",
+                    choices: function () {
+                        let empArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            empArray.push(res[i].first_name + " " + res[i].last_name);
+                        }
+                        return empArray;
+                    }
+                }
+            ]).then((answer) => {
+                var chosenEmp = res.find(item => (item.first_name + " " + item.last_name) === answer.removeEmp)
+                connection.query("DELETE FROM employee WHERE ?",
+                    {
+                        id: chosenEmp.id
+                    },
+                    function (err, res) {
+                        if (err) throw err;
+                        console.log(`${answer.removeEmp} removed!`)
+                        start()
+                    }
+                )
+            })
+    })
+}
 
 //view all employees
-
+function viewAllEmp() {
+    const query = `
+    SELECT e.first_name AS "First name", e.last_name AS "Last name", r.title AS Role, r.salary AS Salary, 
+    CONCAT(em.first_name, " ", em.last_name) AS "Manager name"
+    FROM employee e
+    LEFT JOIN 
+    roles r
+    ON r.id = e.role_id
+    LEFT JOIN employee em
+    ON e.manager_id = em.id
+    `
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+        console.log("")
+        console.table(res)
+        console.log("")
+        start()
+    })
+}
 //view employee by department
+function viewAllEmpDept() {
+    connection.query("SELECT * FROM department", function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "deptName",
+                    message: "Select Department To View Employees",
+                    choices: function () {
+                        let deptArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            deptArray.push(res[i].dept_name);
+                        }
+                        return deptArray;
+                    }
+                }
+            ]).then((answer) => {
+                var chosenDept = res.find(item => item.dept_name === answer.deptName);
+                query = `
+                SELECT e.first_name AS "First name", e.last_name AS "Last name", r.title AS Title, r.salary AS Salary, d.dept_name AS Department
+                FROM employee e
+                LEFT JOIN
+                (roles r
+                LEFT JOIN department d
+                ON d.id = r.dept_id)
+                ON e.role_id = r.id
+                WHERE ?`
+                connection.query(query,
+                    {
+                        dept_id: chosenDept.id
+                    }, function (err, res) {
+                        if (err) throw err;
+                        console.table(res)
+                        start()
+                    })
+            })
+    })
+}
 
 //view employee by manager
+
+function viewAllEmpByManager() {
+    connection.query("SELECT e.id, e.first_name, e.last_name FROM employee e LEFT JOIN roles r ON e.role_id = r.id WHERE title = 'Manager' OR 'manager'", function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "managerName",
+                    message: "Select Manager To View Employees",
+                    choices: function () {
+                        let managerArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            managerArray.push(res[i].first_name + " " + res[i].last_name);
+                        }
+                        return managerArray;
+                    }
+                }
+            ]).then((answer) => {
+                var chosenManager = res.find(item => (item.first_name + " " + item.last_name) === answer.managerName);
+                query = `
+                 SELECT e.first_name AS "First name", e.last_name AS "Last name", r.title AS Title, r.salary AS Salary, d.dept_name AS Department
+                 FROM employee e
+                 LEFT JOIN
+                 (roles r
+                 LEFT JOIN department d
+                 ON d.id = r.dept_id)
+                 ON e.role_id = r.id
+                 WHERE ?`
+                connection.query(query,
+                    {
+                        manager_id: chosenManager.id
+                    }, function (err, res) {
+                        if (err) throw err;
+                        console.log("")
+                        console.table(res)
+                        console.log("")
+                        start()
+                    })
+            })
+    })
+}
 
 //update employee role
 
